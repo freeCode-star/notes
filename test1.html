@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Moin Shadab — Backend Developer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ─── APPLE DESIGN TOKENS ─────────────────────────────────── */
+:root {
+  --sf: -apple-system, "SF Pro Display", "SF Pro Text", "Inter", "Helvetica Neue", Arial, sans-serif;
+  --white: #f5f5f7;
+  --black: #1d1d1f;
+  --mid:   #6e6e73;
+  --blue:  #2997ff;
+  --blue2: #0071e3;
+
+  /* Liquid glass */
+  --glass:        rgba(255,255,255,0.08);
+  --glass-border: rgba(255,255,255,0.18);
+  --glass-hover:  rgba(255,255,255,0.14);
+  --blur: blur(28px) saturate(180%) brightness(1.05);
+
+  --r-pill: 980px;
+  --r-card: 20px;
+  --r-sm:   12px;
+
+  --ease-apple: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--sf);
+  background: #000;
+  color: var(--white);
+  overflow-x: hidden;
+  cursor: none; /* custom cursor */
+}
+
+/* ─── CUSTOM APPLE CURSOR ──────────────────────────────────── */
+#cursor {
+  position: fixed; pointer-events: none; z-index: 99999;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: rgba(255,255,255,0.9);
+  transform: translate(-50%,-50%);
+  transition: width .25s var(--ease-apple),
+              height .25s var(--ease-apple),
+              background .25s,
+              border-radius .25s var(--ease-apple),
+              opacity .2s;
+  mix-blend-mode: difference;
+  will-change: transform;
+}
+#cursor.hovering {
+  width: 44px; height: 44px;
+  background: rgba(255,255,255,0.15);
+  border: 1.5px solid rgba(255,255,255,0.55);
+  mix-blend-mode: normal;
+}
+#cursor.clicking {
+  width: 36px; height: 36px; background: rgba(255,255,255,0.3);
+}
+#cursor.on-text {
+  width: 3px; height: 28px; border-radius: 2px;
+}
+
+/* ─── SCROLLBAR ────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #000; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+/* ─── STICKY NAV ─────────────────────────────────────────────
+   Exact Apple.com nav: translucent bar, pill hover states      */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 9000;
+  height: 48px;
+  background: rgba(22,22,23,0.78);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  display: flex; align-items: center; justify-content: center;
+}
+.nav-inner {
+  width: 100%; max-width: 980px;
+  padding: 0 20px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo { font-size: 20px; line-height: 1; color: var(--white); }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a {
+  font-size: 13px; color: rgba(245,245,247,0.75);
+  text-decoration: none; padding: 5px 12px;
+  border-radius: var(--r-pill);
+  transition: color .2s, background .2s;
+  white-space: nowrap;
+}
+.nav-links a:hover, .nav-links a.active {
+  color: var(--white); background: rgba(255,255,255,0.1);
+}
+.nav-cta {
+  font-size: 13px; color: var(--blue);
+  text-decoration: none; padding: 5px 12px;
+  border-radius: var(--r-pill);
+  transition: background .2s;
+}
+.nav-cta:hover { background: rgba(41,151,255,0.12); }
+@media(max-width:700px){
+  .nav-links { display:none; }
+}
+
+/* ─── BACKGROUND MESH ──────────────────────────────────────── */
+.bg {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  overflow: hidden;
+}
+.bg-orb {
+  position: absolute; border-radius: 50%; filter: blur(120px);
+  animation: float 20s ease-in-out infinite alternate;
+}
+.o1 { width:700px;height:700px; background:radial-gradient(circle,rgba(41,151,255,.28),transparent 65%); top:-200px; left:-150px; animation-delay:0s; }
+.o2 { width:500px;height:500px; background:radial-gradient(circle,rgba(100,60,255,.22),transparent 65%); top:40%; right:-100px; animation-delay:-7s; }
+.o3 { width:450px;height:450px; background:radial-gradient(circle,rgba(0,180,180,.18),transparent 65%); bottom:-80px; left:25%; animation-delay:-14s; }
+@keyframes float {
+  0%   { transform: translate(0,0) scale(1); }
+  60%  { transform: translate(50px,-70px) scale(1.06); }
+  100% { transform: translate(-40px,50px) scale(0.94); }
+}
+
+/* ─── LIQUID GLASS CARD ────────────────────────────────────── */
+.glass {
+  background: var(--glass);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-border);
+  /* top specular highlight */
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.22),
+    inset 0 -1px 0 rgba(0,0,0,0.15),
+    0 8px 40px rgba(0,0,0,.45),
+    0 2px 8px rgba(0,0,0,.3);
+}
+.glass:hover {
+  background: var(--glass-hover);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.28),
+    inset 0 -1px 0 rgba(0,0,0,0.15),
+    0 16px 60px rgba(0,0,0,.55),
+    0 4px 12px rgba(0,0,0,.35);
+}
+
+/* ─── LAYOUT ───────────────────────────────────────────────── */
+main { position: relative; z-index: 1; }
+
+/* Apple uses tight 980px columns */
+.section {
+  max-width: 980px; margin: 0 auto;
+  padding: 140px 20px 80px;
+}
+.section-wide {
+  max-width: 1200px; margin: 0 auto;
+  padding: 80px 20px;
+}
+
+/* Apple eyebrow text */
+.eyebrow {
+  font-size: 13px; font-weight: 600; letter-spacing: .5px;
+  text-transform: uppercase; color: var(--blue);
+  margin-bottom: 14px;
+}
+
+/* ─── HERO ─────────────────────────────────────────────────── */
+#hero {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+  text-align: center;
+  padding: 120px 20px 80px;
+  position: relative;
+}
+
+.hero-tag {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 18px; border-radius: var(--r-pill);
+  font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.75);
+  margin-bottom: 32px;
+}
+.hero-tag-live {
+  width: 7px; height: 7px; background: #34d058; border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(52,208,88,.25);
+  animation: pulse-live 2s infinite;
+}
+@keyframes pulse-live {
+  0%,100%{ box-shadow: 0 0 0 3px rgba(52,208,88,.25); }
+  50%    { box-shadow: 0 0 0 6px rgba(52,208,88,.08); }
+}
+
+.hero-headline {
+  font-size: clamp(48px, 9vw, 116px);
+  font-weight: 800; line-height: .98; letter-spacing: -.04em;
+  color: var(--white);
+  margin-bottom: 10px;
+}
+.hero-headline em {
+  font-style: normal;
+  background: linear-gradient(120deg, #fff 20%, #b8d4ff 55%, #7ca5ff 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-sub {
+  font-size: clamp(20px, 3vw, 32px);
+  font-weight: 300; color: #888;
+  margin-bottom: 40px; letter-spacing: -.01em;
+}
+.hero-sub strong { color: var(--white); font-weight: 500; }
+
+.hero-desc {
+  max-width: 580px; font-size: 17px; line-height: 1.7;
+  color: #6e6e73; margin: 0 auto 44px;
+}
+
+/* Apple-style CTA row */
+.cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn-blue {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 13px 28px; border-radius: var(--r-pill);
+  background: var(--blue2); color: #fff;
+  font-size: 16px; font-weight: 500; text-decoration: none;
+  transition: background .2s, transform .2s;
+}
+.btn-blue:hover { background: #0077ed; transform: scale(1.02); }
+.btn-outline {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 13px 28px; border-radius: var(--r-pill);
+  color: var(--blue);
+  font-size: 16px; font-weight: 500; text-decoration: none;
+  transition: background .2s;
+}
+.btn-outline:hover { background: rgba(41,151,255,.1); }
+
+/* Stats strip */
+.stats-strip {
+  display: flex; gap: 0; margin: 80px auto 0;
+  max-width: 680px; width: 100%;
+  border-radius: var(--r-card); overflow: hidden;
+  border: 1px solid rgba(255,255,255,.12);
+}
+.stat-cell {
+  flex: 1; padding: 24px 12px; text-align: center;
+  background: rgba(255,255,255,.04);
+  border-right: 1px solid rgba(255,255,255,.1);
+  transition: background .2s;
+}
+.stat-cell:last-child { border-right: none; }
+.stat-cell:hover { background: rgba(255,255,255,.08); }
+.stat-num {
+  font-size: 36px; font-weight: 700; color: var(--white); line-height: 1;
+  letter-spacing: -.03em;
+}
+.stat-num sup { font-size: 18px; vertical-align: super; }
+.stat-lbl { font-size: 12px; color: #6e6e73; margin-top: 4px; }
+
+/* ─── ABOUT ─────────────────────────────────────────────────── */
+#about { background: #0a0a0a; }
+.about-wrap {
+  display: grid; grid-template-columns: 1fr 1.1fr;
+  gap: 80px; align-items: center;
+}
+@media(max-width:760px){ .about-wrap { grid-template-columns:1fr; gap:40px; } }
+
+.about-visual {
+  display: flex; justify-content: center; align-items: center;
+  position: relative;
+}
+/* Avatar ring */
+.av-container { position: relative; width: 260px; height: 260px; }
+.av-glow {
+  position: absolute; inset: -20px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(41,151,255,.25), transparent 70%);
+  animation: av-pulse 3s ease-in-out infinite;
+}
+@keyframes av-pulse {
+  0%,100%{ transform:scale(1); opacity:.8; }
+  50%    { transform:scale(1.07); opacity:1; }
+}
+.av-ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 1.5px solid transparent;
+  background: conic-gradient(var(--blue), #bf6bff, #0ecbcb, var(--blue)) border-box;
+  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: destination-out; mask-composite: exclude;
+  animation: spin-conic 6s linear infinite;
+}
+@keyframes spin-conic { to { transform: rotate(360deg); } }
+.av-face {
+  position: absolute; inset: 8px; border-radius: 50%;
+  background: #111; display: flex; justify-content: center;
+  align-items: center; font-size: 88px;
+  border: 1px solid rgba(255,255,255,.1);
+}
+.about-badge {
+  position: absolute; bottom: -10px; right: -10px;
+  padding: 8px 16px; border-radius: var(--r-sm);
+  font-size: 13px; font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+
+.about-title {
+  font-size: clamp(32px,5vw,54px); font-weight: 700;
+  letter-spacing: -.03em; line-height: 1.1; margin-bottom: 20px;
+}
+.about-body {
+  font-size: 16px; line-height: 1.75; color: #6e6e73;
+}
+.about-body p { margin-bottom: 14px; }
+.about-body a { color: var(--blue); text-decoration: none; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+.chip {
+  padding: 6px 14px; border-radius: var(--r-pill);
+  font-size: 13px; font-weight: 500;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.1);
+  color: rgba(255,255,255,.65);
+  transition: background .2s, color .2s;
+}
+.chip:hover { background: rgba(41,151,255,.15); color: var(--blue); }
+
+/* ─── EXPERIENCE TIMELINE ───────────────────────────────────── */
+#experience { background: #000; }
+.timeline { margin-top: 60px; position: relative; padding-left: 0; }
+
+.tl-item {
+  display: grid; grid-template-columns: 56px 1fr;
+  gap: 28px; margin-bottom: 56px; position: relative;
+}
+.tl-left { display: flex; flex-direction: column; align-items: center; }
+.tl-icon {
+  width: 56px; height: 56px; border-radius: 16px;
+  display: flex; justify-content: center; align-items: center;
+  font-size: 24px; flex-shrink: 0;
+}
+.tl-line {
+  flex: 1; width: 2px; margin-top: 10px;
+  background: linear-gradient(to bottom, rgba(41,151,255,.4), transparent);
+}
+
+.tl-co  { font-size: 12px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: var(--blue); margin-bottom: 4px; }
+.tl-role { font-size: 22px; font-weight: 700; letter-spacing: -.02em; margin-bottom: 4px; }
+.tl-period { font-family: "SF Mono", "JetBrains Mono", monospace; font-size: 12px; color: #555; margin-bottom: 14px; }
+.tl-desc { font-size: 15px; color: #6e6e73; line-height: 1.7; margin-bottom: 14px; }
+.tl-ach {
+  padding: 14px 18px; border-radius: var(--r-sm);
+  background: rgba(41,151,255,.07);
+  border: 1px solid rgba(41,151,255,.18);
+  font-size: 14px; color: rgba(255,255,255,.6); line-height: 1.6;
+  margin-bottom: 14px;
+}
+.tl-ach strong { display: block; color: var(--blue); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.tl-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.tl-tag {
+  padding: 4px 12px; border-radius: var(--r-pill); font-size: 12px;
+  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+  color: rgba(255,255,255,.5);
+}
+
+/* ─── PROJECTS ──────────────────────────────────────────────── */
+#projects { background: #0a0a0a; }
+
+/* Apple-style bento grid */
+.bento {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: auto;
+  gap: 16px; margin-top: 60px;
+}
+@media(max-width:900px){ .bento { grid-template-columns: repeat(2,1fr); } }
+@media(max-width:600px){ .bento { grid-template-columns: 1fr; } }
+
+.bento-card {
+  border-radius: var(--r-card);
+  padding: 30px 28px; position: relative; overflow: hidden;
+  transition: transform .35s var(--ease-apple), box-shadow .35s var(--ease-apple);
+  text-decoration: none; color: inherit;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.bento-card:hover { transform: scale(1.025); }
+/* 3D tilt applied by JS */
+
+/* featured card spans 2 columns */
+.bento-feat { grid-column: span 2; }
+@media(max-width:600px){ .bento-feat { grid-column: span 1; } }
+
+.bento-card::after {
+  content: '';
+  position: absolute; inset: 0; border-radius: var(--r-card);
+  background: linear-gradient(135deg, rgba(255,255,255,.05) 0%, transparent 60%);
+  pointer-events: none;
+}
+.bc-icon { font-size: 38px; }
+.bc-name { font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
+.bc-desc { font-size: 14px; color: rgba(255,255,255,.5); line-height: 1.65; flex: 1; }
+.bc-link {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 13px; font-weight: 600; text-decoration: none;
+  margin-top: 8px; transition: gap .2s;
+}
+.bc-link:hover { gap: 10px; }
+
+/* card color themes */
+.bc-blue   { background: linear-gradient(145deg,#0c1d35,#08101e); border: 1px solid rgba(41,151,255,.2); }
+.bc-purple { background: linear-gradient(145deg,#1a0d2e,#100720); border: 1px solid rgba(150,80,255,.2); }
+.bc-green  { background: linear-gradient(145deg,#081a10,#040d08); border: 1px solid rgba(52,211,153,.2); }
+.bc-orange { background: linear-gradient(145deg,#1e1000,#120900); border: 1px solid rgba(251,146,60,.2); }
+.bc-pink   { background: linear-gradient(145deg,#1e0a14,#120508); border: 1px solid rgba(236,72,153,.2); }
+.bc-teal   { background: linear-gradient(145deg,#021a1a,#010e0e); border: 1px solid rgba(6,182,212,.2); }
+.bc-amber  { background: linear-gradient(145deg,#1a1200,#0e0a00); border: 1px solid rgba(245,158,11,.2); }
+
+/* ─── SKILLS ────────────────────────────────────────────────── */
+#skills { background: #000; }
+.skills-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px; margin-top: 60px;
+}
+.skill-card {
+  border-radius: var(--r-card); padding: 24px 20px;
+  transition: transform .3s var(--ease-apple);
+}
+.skill-card:hover { transform: translateY(-4px); }
+.sc-icon { font-size: 28px; margin-bottom: 12px; }
+.sc-name { font-size: 15px; font-weight: 700; margin-bottom: 14px; }
+.sc-items { display: flex; flex-direction: column; gap: 10px; }
+.sc-row { display: flex; align-items: center; gap: 10px; }
+.sc-label { font-size: 12px; color: #6e6e73; min-width: 80px; }
+.sc-track {
+  flex: 1; height: 3px; background: rgba(255,255,255,.1);
+  border-radius: 2px; overflow: hidden;
+}
+.sc-fill {
+  height: 100%; border-radius: 2px;
+  width: 0; transition: width 1.4s var(--ease-apple);
+}
+
+/* ─── TECH STACK MARQUEE ─────────────────────────────────────── */
+.marquee-wrap {
+  overflow: hidden; padding: 60px 0;
+  border-top: 1px solid rgba(255,255,255,.07);
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  background: #0a0a0a;
+}
+.marquee-track {
+  display: flex; gap: 48px; width: max-content;
+  animation: marquee 22s linear infinite;
+}
+.marquee-wrap:hover .marquee-track { animation-play-state: paused; }
+@keyframes marquee { to { transform: translateX(-50%); } }
+.marquee-item {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 15px; font-weight: 600; color: rgba(255,255,255,.35);
+  white-space: nowrap; transition: color .25s;
+}
+.marquee-item:hover { color: var(--white); }
+.marquee-item span { font-size: 22px; }
+
+/* ─── CONTACT ────────────────────────────────────────────────── */
+#contact {
+  background: linear-gradient(180deg, #060606 0%, #000 100%);
+  text-align: center;
+}
+.contact-headline {
+  font-size: clamp(36px,6vw,72px); font-weight: 700;
+  letter-spacing: -.04em; line-height: 1.05; margin-bottom: 18px;
+}
+.contact-sub { font-size: 18px; color: #6e6e73; margin-bottom: 56px; }
+.contact-cards {
+  display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+}
+.contact-card {
+  border-radius: var(--r-card); padding: 32px 36px;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  text-decoration: none; color: inherit; min-width: 200px;
+  transition: transform .3s var(--ease-apple);
+}
+.contact-card:hover { transform: translateY(-6px); }
+.cc-icon { font-size: 36px; }
+.cc-name { font-size: 16px; font-weight: 700; }
+.cc-handle { font-size: 13px; color: #6e6e73; }
+
+/* ─── FOOTER ─────────────────────────────────────────────────── */
+footer {
+  text-align: center; padding: 30px 20px;
+  border-top: 1px solid rgba(255,255,255,.07);
+  font-size: 13px; color: #424245; position: relative; z-index: 1;
+}
+footer a { color: #424245; text-decoration: none; }
+footer a:hover { color: var(--white); }
+
+/* ─── SCROLL REVEAL ──────────────────────────────────────────── */
+.reveal { opacity: 0; transform: translateY(36px); transition: opacity .7s var(--ease-apple), transform .7s var(--ease-apple); }
+.reveal.show { opacity: 1; transform: translateY(0); }
+.d1 { transition-delay: .1s; } .d2 { transition-delay: .2s; }
+.d3 { transition-delay: .3s; } .d4 { transition-delay: .4s; }
+
+/* ─── APPLE SECTION LABEL STYLE ──────────────────────────────── */
+.section-header { margin-bottom: 16px; }
+.section-title {
+  font-size: clamp(36px,5vw,60px); font-weight: 700;
+  letter-spacing: -.04em; line-height: 1.05;
+}
+.section-sub {
+  font-size: 18px; color: #6e6e73; margin-top: 12px; line-height: 1.5;
+  max-width: 600px;
+}
+
+/* ─── PILL TAGS ──────────────────────────────────────────────── */
+.pill {
+  display: inline-block; padding: 3px 11px; border-radius: var(--r-pill);
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px;
+}
+.pill-blue   { background: rgba(41,151,255,.15); color: var(--blue); }
+.pill-purple { background: rgba(150,80,255,.15);  color: #a855f7; }
+.pill-green  { background: rgba(52,211,153,.15);  color: #34d399; }
+</style>
+</head>
+<body>
+
+<!-- Custom cursor -->
+<div id="cursor"></div>
+
+<!-- Mesh background -->
+<div class="bg">
+  <div class="bg-orb o1"></div>
+  <div class="bg-orb o2"></div>
+  <div class="bg-orb o3"></div>
+</div>
+
+<!-- ─── NAV ──────────────────────────────────────────────────── -->
+<nav>
+  <div class="nav-inner">
+    <span class="nav-logo">⌘</span>
+    <div class="nav-links">
+      <a href="#hero"       class="active">Home</a>
+      <a href="#about">About</a>
+      <a href="#experience">Work</a>
+      <a href="#projects">Projects</a>
+      <a href="#skills">Skills</a>
+    </div>
+    <a class="nav-cta" href="#contact">Get in touch</a>
+  </div>
+</nav>
+
+<main>
+
+<!-- ─── HERO ──────────────────────────────────────────────────── -->
+<section id="hero">
+  <div class="hero-tag glass reveal">
+    <div class="hero-tag-live"></div>
+    Available for opportunities
+  </div>
+
+  <h1 class="hero-headline reveal d1">
+    <em>Moin Shadab</em>
+  </h1>
+  <p class="hero-sub reveal d2">
+    Backend Developer &amp; <strong>Systems Builder</strong>
+  </p>
+  <p class="hero-desc reveal d3">
+    I architect the invisible infrastructure that powers real businesses — ERP platforms, hospital management systems, payment gateways, and a hand-crafted email client built from raw IMAP protocols. 3+ years of turning complex problems into elegant server-side software.
+  </p>
+  <div class="cta-row reveal d4">
+    <a href="#projects" class="btn-blue">View My Work →</a>
+    <a href="#contact"  class="btn-outline">Get In Touch</a>
+  </div>
+
+  <div class="stats-strip glass reveal d4">
+    <div class="stat-cell">
+      <div class="stat-num">3<sup>+</sup></div>
+      <div class="stat-lbl">Years Experience</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-num">7<sup>+</sup></div>
+      <div class="stat-lbl">Live Projects</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-num">2<sup>+</sup></div>
+      <div class="stat-lbl">PLC Years</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-num">∞</div>
+      <div class="stat-lbl">Ideas Built</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── ABOUT ─────────────────────────────────────────────────── -->
+<section id="about">
+  <div class="section section-wide" style="padding-top:100px;padding-bottom:100px;">
+    <div class="about-wrap">
+
+      <div class="about-visual reveal">
+        <div class="av-container">
+          <div class="av-glow"></div>
+          <div class="av-ring"></div>
+          <div class="av-face">👨‍💻</div>
+          <div class="about-badge glass">🇮🇳 <span style="font-size:13px;font-weight:600">India</span></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="eyebrow reveal">About Me</div>
+        <h2 class="about-title reveal d1">The developer<br>behind the code.</h2>
+        <div class="about-body reveal d2">
+          <p>I'm a Backend Developer at Advanced Microdevices Pvt. Ltd., where I've spent 3 years building software that organizations depend on daily — from hospital management systems to full-scale ERP platforms, all designed and architected from scratch.</p>
+          <p>My hallmark is going deeper than most. When my company needed an email solution, I didn't integrate a third-party service — I <em>built an international email client from the ground up</em>, working directly with IMAP protocols, queue systems, and cross-server routing.</p>
+          <p>Before backend work, I spent 2 years as a PLC programmer — writing industrial automation logic that had to perform flawlessly in production environments. That low-level systems thinking shapes everything I build.</p>
+        </div>
+        <div class="chips reveal d3">
+          <span class="chip">🏃 Running</span>
+          <span class="chip">⚽ Sports</span>
+          <span class="chip">📚 Reading</span>
+          <span class="chip">🍳 Cooking</span>
+          <span class="chip">💡 Building ideas</span>
+          <span class="chip">🔧 Tinkering</span>
+        </div>
+        <div style="margin-top:28px;" class="reveal d4">
+          <a href="https://github.com/Moin-shadab" target="_blank" class="btn-blue" style="font-size:15px;">GitHub Profile →</a>
+          <a href="https://www.linkedin.com/in/moin-shadab-8a491b1b1/" target="_blank" class="btn-outline" style="font-size:15px;">LinkedIn</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── TECH MARQUEE ───────────────────────────────────────────── -->
+<div class="marquee-wrap">
+  <div class="marquee-track" id="marquee">
+    <span class="marquee-item"><span>🐘</span> PHP</span>
+    <span class="marquee-item"><span>🔴</span> Laravel</span>
+    <span class="marquee-item"><span>🗄️</span> MySQL</span>
+    <span class="marquee-item"><span>🍵</span> CouchDB</span>
+    <span class="marquee-item"><span>⚛️</span> React</span>
+    <span class="marquee-item"><span>🟨</span> JavaScript</span>
+    <span class="marquee-item"><span>💙</span> jQuery</span>
+    <span class="marquee-item"><span>☕</span> Core Java</span>
+    <span class="marquee-item"><span>⚡</span> C++</span>
+    <span class="marquee-item"><span>📧</span> IMAP Protocol</span>
+    <span class="marquee-item"><span>💳</span> PhonePe API</span>
+    <span class="marquee-item"><span>🔧</span> PLC Programming</span>
+    <span class="marquee-item"><span>🤖</span> Prompt Engineering</span>
+    <span class="marquee-item"><span>🌐</span> REST APIs</span>
+    <!-- duplicate for seamless loop -->
+    <span class="marquee-item"><span>🐘</span> PHP</span>
+    <span class="marquee-item"><span>🔴</span> Laravel</span>
+    <span class="marquee-item"><span>🗄️</span> MySQL</span>
+    <span class="marquee-item"><span>🍵</span> CouchDB</span>
+    <span class="marquee-item"><span>⚛️</span> React</span>
+    <span class="marquee-item"><span>🟨</span> JavaScript</span>
+    <span class="marquee-item"><span>💙</span> jQuery</span>
+    <span class="marquee-item"><span>☕</span> Core Java</span>
+    <span class="marquee-item"><span>⚡</span> C++</span>
+    <span class="marquee-item"><span>📧</span> IMAP Protocol</span>
+    <span class="marquee-item"><span>💳</span> PhonePe API</span>
+    <span class="marquee-item"><span>🔧</span> PLC Programming</span>
+    <span class="marquee-item"><span>🤖</span> Prompt Engineering</span>
+    <span class="marquee-item"><span>🌐</span> REST APIs</span>
+  </div>
+</div>
+
+<!-- ─── EXPERIENCE ─────────────────────────────────────────────── -->
+<section id="experience">
+  <div class="section">
+    <div class="section-header">
+      <div class="eyebrow reveal">Work Experience</div>
+      <h2 class="section-title reveal d1">Where I've<br>shipped things that matter.</h2>
+      <p class="section-sub reveal d2">3 years building systems real organizations rely on every day.</p>
+    </div>
+
+    <div class="timeline">
+      <div class="tl-item reveal">
+        <div class="tl-left">
+          <div class="tl-icon glass">🏢</div>
+          <div class="tl-line"></div>
+        </div>
+        <div class="tl-body">
+          <div class="tl-co">Advanced Microdevices Pvt. Ltd. · India</div>
+          <div class="tl-role">Backend Developer</div>
+          <div class="tl-period">2022 — Present · 3 Years</div>
+          <div class="tl-desc">
+            Led end-to-end backend development for enterprise-grade software: a full ERP platform, accounting system, hospital management suite, and company management tools — all built from scratch. Designed and maintained REST APIs, integrated payment gateways, and shipped fast, stable tracking software targeting legacy hardware environments.
+          </div>
+          <div class="tl-ach">
+            <strong>🏆 Landmark Achievement</strong>
+            Engineered a complete International Email Client from zero — not a wrapper around a third-party library, but a ground-up implementation handling raw IMAP protocol communication, mail parsing, queue management, and cross-server delivery. A rare engineering feat that required deep understanding of internet protocols and distributed systems.
+          </div>
+          <div class="tl-tags">
+            <span class="tl-tag">PHP</span><span class="tl-tag">Laravel</span>
+            <span class="tl-tag">MySQL</span><span class="tl-tag">CouchDB</span>
+            <span class="tl-tag">IMAP</span><span class="tl-tag">PhonePe API</span>
+            <span class="tl-tag">REST APIs</span><span class="tl-tag">ERP</span>
+            <span class="tl-tag">Barcode Systems</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tl-item reveal d2">
+        <div class="tl-left">
+          <div class="tl-icon glass">⚡</div>
+        </div>
+        <div class="tl-body">
+          <div class="tl-co">Freelance / Part-Time</div>
+          <div class="tl-role">PLC Programmer</div>
+          <div class="tl-period">2020 — 2022 · 2 Years</div>
+          <div class="tl-desc">
+            Programmed logic controllers for industrial automation systems — writing precise control code that had to perform flawlessly in production hardware. This grounded me in thinking about systems at a fundamentally low level, where bugs mean physical consequences. That discipline still informs every backend system I design.
+          </div>
+          <div class="tl-tags">
+            <span class="tl-tag">PLC Programming</span>
+            <span class="tl-tag">Automation Logic</span>
+            <span class="tl-tag">Industrial Systems</span>
+            <span class="tl-tag">Hardware Integration</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── PROJECTS BENTO ─────────────────────────────────────────── -->
+<section id="projects">
+  <div class="section-wide">
+    <div class="section-header">
+      <div class="eyebrow reveal">Projects</div>
+      <h2 class="section-title reveal d1">Things I've<br>designed &amp; shipped.</h2>
+      <p class="section-sub reveal d2">Live projects, open-source tools, and technical guides — each one solving a real problem.</p>
+    </div>
+
+    <div class="bento">
+
+      <a href="https://moin-shadab.github.io/dsa-roadmap/" target="_blank"
+         class="bento-card bc-blue bento-feat reveal">
+        <div class="bc-icon">🗺️</div>
+        <div class="bc-name">DSA Roadmap</div>
+        <div class="bc-desc">A comprehensive, structured guide for mastering Data Structures &amp; Algorithms — giving learners the clear, progressive path from fundamentals to advanced topics that I wish existed when I started. Beautifully organized with stages, complexity notes, and practice tracks.</div>
+        <span class="bc-link" style="color:#60a5fa">View Live ↗</span>
+      </a>
+
+      <a href="https://moin-shadab.github.io/resume-builder/" target="_blank"
+         class="bento-card bc-green reveal d1">
+        <div class="bc-icon">📄</div>
+        <div class="bc-name">ATS Resume Builder</div>
+        <div class="bc-desc">Free browser-based resume builder optimized for Applicant Tracking Systems. Helps candidates craft resumes that survive automated filters and reach human decision-makers.</div>
+        <span class="bc-link" style="color:#34d399">View Live ↗</span>
+      </a>
+
+      <a href="https://moin-shadab.github.io/email-work-flow/" target="_blank"
+         class="bento-card bc-purple reveal d2">
+        <div class="bc-icon">📧</div>
+        <div class="bc-name">Email Client Flow</div>
+        <div class="bc-desc">A deep technical explainer on international email systems — SMTP, IMAP, encoding, auth. Born from building a real production email client from raw protocols.</div>
+        <span class="bc-link" style="color:#a855f7">View Live ↗</span>
+      </a>
+
+      <a href="https://moin-shadab.github.io/imap-protocol-and-payment-integration-guide/" target="_blank"
+         class="bento-card bc-orange reveal">
+        <div class="bc-icon">💳</div>
+        <div class="bc-name">IMAP &amp; PhonePe Guide</div>
+        <div class="bc-desc">Battle-tested patterns for two of Indian backend development's hardest integrations — IMAP protocol handling and PhonePe payment gateway setup. Real-world, production-proven.</div>
+        <span class="bc-link" style="color:#fb923c">View Live ↗</span>
+      </a>
+
+      <a href="https://moin-shadab.github.io/web-piano/" target="_blank"
+         class="bento-card bc-teal reveal d1">
+        <div class="bc-icon">🎹</div>
+        <div class="bc-name">Web Piano</div>
+        <div class="bc-desc">A fully playable, interactive piano built entirely in the browser. Accurate tones, responsive keys — proof that good engineers can ship delightful experiences.</div>
+        <span class="bc-link" style="color:#06b6d4">View Live ↗</span>
+      </a>
+
+      <a href="https://github.com/Moin-shadab/Text_To_Hand-Writing" target="_blank"
+         class="bento-card bc-amber reveal d2">
+        <div class="bc-icon">✍️</div>
+        <div class="bc-name">Text → Handwriting</div>
+        <div class="bc-desc">Python script that converts typed text into realistic handwritten-style output. Practical, clever, and surprisingly useful for students who want handwritten notes without the cramps.</div>
+        <span class="bc-link" style="color:#f59e0b">GitHub ↗</span>
+      </a>
+
+      <a href="https://moin-shadab.github.io/girlfriend-friend-birthday-wish/" target="_blank"
+         class="bento-card bc-pink reveal">
+        <div class="bc-icon">🎂</div>
+        <div class="bc-name">Birthday Wish UI</div>
+        <div class="bc-desc">An animated, interactive birthday wish experience with confetti and personalized messages. Because code can be heartfelt — sometimes the best projects are the most personal ones.</div>
+        <span class="bc-link" style="color:#ec4899">View Live ↗</span>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── SKILLS ─────────────────────────────────────────────────── -->
+<section id="skills">
+  <div class="section-wide">
+    <div class="section-header">
+      <div class="eyebrow reveal">Skills &amp; Stack</div>
+      <h2 class="section-title reveal d1">Tools I reach for<br>every day.</h2>
+    </div>
+
+    <div class="skills-grid">
+
+      <div class="skill-card glass reveal d1">
+        <div class="sc-icon">⚙️</div>
+        <div class="sc-name">Backend</div>
+        <div class="sc-items">
+          <div class="sc-row"><span class="sc-label">PHP</span><div class="sc-track"><div class="sc-fill" style="background:linear-gradient(90deg,#7c8cf8,#a5b4fc)" data-w="92"></div></div></div>
+          <div class="sc-row"><span class="sc-label">Laravel</span><div class="sc-track"><div class="sc-fill" style="background:linear-gradient(90deg,#ff6b81,#ff8e9e)" data-w="88"></div></div></div>
+          <div class="sc-row"><span class="sc-label">REST APIs</span><div class="sc-track"><div class="sc-fill" style="background:linear-gradient(90deg,#2997ff,#86c5ff)" data-w="90"></div></div></div>
+          <div class="sc-row"><span class="sc-label">IMAP</span><div class="sc-track"><div class="sc-fill" style="background:linear-gradient(90deg,#bf6bff,#d4a4ff)" data-w="80"></div></div></div>
+        </div>
+      </div>
+
+      <div class="skill-card glass reveal d2">
+        <div class="sc-icon">🗄️</div>
+        <div class="sc-name">Databases</div>
+        <div class="sc-items">
+          <div class="sc-row"><span class="sc-label">MySQL</span><div class="sc-track"><div class="sc-fill" style="background:linear-gradient(90deg,#f59e0b,#fde68a)" data-w="90"></div></div></div>
+          <div class="sc-row"><span class="sc-label">CouchDB</span><div class="sc-track"><div class="sc-fill" style="background:linear-gradient(90deg,#34d399,#6ee7b7)" data-w="75"></div></div></div>
+        </div>
+      </div>
+
+      <div class="skill-card glass reveal d3">
+        <div class="sc-icon">🖥️</div>
+        <div class="sc-name">Frontend</div>
+        <div class="sc-items">
+          <div class="sc-row"><span class="sc-label">HTML/CSS</span><div class="sc-track"><div class="sc-fill" style="background:linear-gradient(90deg,#ef4444,#f87171)" data-w="88"></div></div></div>
+          <div class="sc-row"><span class="sc-label">JavaScript</span><div class="sc-track"><div class="sc-fill" style="background:linear-gradient(90deg,#fbbf24,#fde68a)" data-w="82"></div></div></div>
+          <div class="sc-row"><span class="sc-label">React</span><div class="sc-track"><div class="sc-fill" style="background:linear-gradient(90deg,#61dafb,#a5f3fc)" data-w="70"></div></div></div>
+          <div class="sc-row"><span class="sc-label">jQuery</span><div class="sc-track"><div class="sc-fill" style="background:linear-gradient(90deg,#3b82f6,#93c5fd)" data-w="85"></div></div></div>
+        </div>
+      </div>
+
+      <div class="skill-card glass reveal d1">
+        <div class="sc-icon">💻</div>
+        <div class="sc-name">Languages</div>
+        <div class="sc-items">
+          <div class="sc-row"><span class="sc-label">Core Java</span><div class="sc-track"><div class="sc-fill" style="background:linear-gradient(90deg,#f97316,#fdba74)" data-w="78"></div></div></div>
+          <div class="sc-row"><span class="sc-label">C++</span><div class="sc-track"><div class="sc-fill" style="background:linear-gradient(90deg,#a78bfa,#c4b5fd)" data-w="72"></div></div></div>
+          <div class="sc-row"><span class="sc-label">Python</span><div class="sc-track"><div class="sc-fill" style="background:linear-gradient(90deg,#34d399,#6ee7b7)" data-w="68"></div></div></div>
+        </div>
+      </div>
+
+      <div class="skill-card glass reveal d2">
+        <div class="sc-icon">🔧</div>
+        <div class="sc-name">Specialties</div>
+        <div class="sc-items">
+          <div class="sc-row"><span class="sc-label">ERP Systems</span><div class="sc-track"><div class="sc-fill" style="background:linear-gradient(90deg,#2997ff,#bf6bff)" data-w="92"></div></div></div>
+          <div class="sc-row"><span class="sc-label">Payment APIs</span><div class="sc-track"><div class="sc-fill" style="background:linear-gradient(90deg,#34d399,#0ecbcb)" data-w="85"></div></div></div>
+          <div class="sc-row"><span class="sc-label">PLC Logic</span><div class="sc-track"><div class="sc-fill" style="background:linear-gradient(90deg,#f59e0b,#f97316)" data-w="78"></div></div></div>
+          <div class="sc-row"><span class="sc-label">Prompt Eng.</span><div class="sc-track"><div class="sc-fill" style="background:linear-gradient(90deg,#ec4899,#bf6bff)" data-w="82"></div></div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── CONTACT ────────────────────────────────────────────────── -->
+<section id="contact">
+  <div class="section" style="text-align:center;">
+    <div class="eyebrow reveal" style="text-align:center">Contact</div>
+    <h2 class="contact-headline reveal d1">Let's build<br>something great.</h2>
+    <p class="contact-sub reveal d2">Open to backend roles, freelance work, and interesting problems.<br>If you have something worth building — I want to hear about it.</p>
+    <div class="contact-cards reveal d3">
+      <a href="https://www.linkedin.com/in/moin-shadab-8a491b1b1/" target="_blank" class="contact-card glass">
+        <div class="cc-icon">💼</div>
+        <div class="cc-name">LinkedIn</div>
+        <div class="cc-handle">moin-shadab-8a491b1b1</div>
+      </a>
+      <a href="https://github.com/Moin-shadab" target="_blank" class="contact-card glass">
+        <div class="cc-icon">🐙</div>
+        <div class="cc-name">GitHub</div>
+        <div class="cc-handle">@Moin-shadab</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <p>Moin Shadab &nbsp;·&nbsp; Backend Developer &nbsp;·&nbsp; India &nbsp;·&nbsp; 2025</p>
+  <p style="margin-top:8px;font-size:11px">Built with Apple Liquid Glass Design Language · iOS 26 Edition</p>
+</footer>
+
+<script>
+/* ─── CURSOR ────────────────────────────────────────────────── */
+const cur = document.getElementById('cursor');
+let mx=0, my=0, cx=0, cy=0;
+document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; });
+(function raf(){
+  cx += (mx-cx)*0.18; cy += (my-cy)*0.18;
+  cur.style.left = cx+'px'; cur.style.top = cy+'px';
+  requestAnimationFrame(raf);
+})();
+
+/* hover classes */
+const hover = document.querySelectorAll('a,button,.bento-card,.glass-card,.contact-card,.stat-cell');
+hover.forEach(el=>{
+  el.addEventListener('mouseenter',()=>cur.classList.add('hovering'));
+  el.addEventListener('mouseleave',()=>cur.classList.remove('hovering'));
+});
+document.addEventListener('mousedown',()=>cur.classList.add('clicking'));
+document.addEventListener('mouseup',()=>cur.classList.remove('clicking'));
+/* text cursor on paragraphs */
+document.querySelectorAll('p,li,.about-body').forEach(el=>{
+  el.addEventListener('mouseenter',()=>cur.classList.add('on-text'));
+  el.addEventListener('mouseleave',()=>cur.classList.remove('on-text'));
+});
+
+/* ─── SCROLL REVEAL ─────────────────────────────────────────── */
+const io = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('show'); });
+},{threshold:0.1});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+/* ─── SKILL BARS ────────────────────────────────────────────── */
+const barIO = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.style.width = e.target.dataset.w + '%';
+    }
+  });
+},{threshold:0.5});
+document.querySelectorAll('.sc-fill').forEach(b=>barIO.observe(b));
+
+/* ─── BENTO CARD 3D TILT ───────────────────────────────────── */
+document.querySelectorAll('.bento-card').forEach(card=>{
+  card.addEventListener('mousemove', e=>{
+    const r=card.getBoundingClientRect();
+    const x=(e.clientX-r.left)/r.width-.5;
+    const y=(e.clientY-r.top)/r.height-.5;
+    card.style.transform=`scale(1.025) rotateY(${x*9}deg) rotateX(${-y*9}deg)`;
+    card.style.boxShadow=`
+      ${-x*25}px ${-y*25}px 60px rgba(0,0,0,.5),
+      inset 0 1px 0 rgba(255,255,255,.15)
+    `;
+  });
+  card.addEventListener('mouseleave',()=>{
+    card.style.transform=''; card.style.boxShadow='';
+  });
+});
+
+/* ─── ACTIVE NAV HIGHLIGHT ──────────────────────────────────── */
+const secs = document.querySelectorAll('section[id]');
+const links = document.querySelectorAll('.nav-links a');
+const spy = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      links.forEach(a=>{
+        a.classList.toggle('active', a.getAttribute('href')==='#'+e.target.id);
+      });
+    }
+  });
+},{threshold:0.4});
+secs.forEach(s=>spy.observe(s));
+
+/* ─── GLASS SHIMMER ON HOVER (liquid) ──────────────────────── */
+document.querySelectorAll('.glass,.bento-card').forEach(card=>{
+  card.addEventListener('mousemove',e=>{
+    const r=card.getBoundingClientRect();
+    const px=((e.clientX-r.left)/r.width*100).toFixed(1);
+    const py=((e.clientY-r.top)/r.height*100).toFixed(1);
+    card.style.setProperty('--mx',px+'%');
+    card.style.setProperty('--my',py+'%');
+  });
+});
+
+/* ─── PAGE FADE IN ──────────────────────────────────────────── */
+document.documentElement.style.opacity='0';
+document.documentElement.style.transition='opacity .5s';
+window.addEventListener('load',()=>{ document.documentElement.style.opacity='1'; });
+</script>
+</body>
+</html>
